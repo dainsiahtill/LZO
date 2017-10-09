@@ -1,7 +1,7 @@
 # LZO
 Pure as3 implementation of the LZO compression algorithm.
 
-'''Actionscript
+```Actionscript
 //for test
 var arr:Vector.<uint> = new Vector.<uint>();
 for (var i:int = 0; i < 400; i++) 
@@ -18,4 +18,4 @@ state.inputBuffer = state.outputBuffer;
 state.outputBuffer = null;
 
 lzo.decompress(state);
-'''
+```
