@@ -3,19 +3,18 @@ Pure as3 implementation of the LZO compression algorithm.
 
 ```Actionscript
 //for test
-var arr:Vector.<uint> = new Vector.<uint>();
+
+var bytes:ByteArray = new ByteArray();
 for (var i:int = 0; i < 400; i++) 
 {
-  arr[i] = Math.floor(Math.random() * 4);
+	bytes.writeByte(Math.floor(Math.random() * 4));
 }
-var state:LZOState = new LZOState();
-state.inputBuffer = arr;
 
 var lzo:LZO = new LZO();
-lzo.compress(state);
+var compressedBytes:ByteArray = lzo.compress(bytes);
+trace("length:" + compressedBytes.length);
 
-state.inputBuffer = state.outputBuffer;
-state.outputBuffer = null;
-
-lzo.decompress(state);
+bytes = lzo.decompress(compressedBytes);
+trace("length:" + bytes.length);
+trace(HexUtil.toHexString(bytes));
 ```
