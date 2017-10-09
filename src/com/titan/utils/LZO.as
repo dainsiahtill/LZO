@@ -1,5 +1,6 @@
 package com.titan.utils 
 {
+	import flash.utils.ByteArray;
 	/**
 	 * ...
 	 * @author messiah
@@ -70,15 +71,20 @@ package com.titan.utils
 	        this.cbl = this.out.length;
 	    };
 
-	    private function match_next():void
+	    private function matchNext():void
 		{
 	        this.minNewSize = this.op + 3;
-	        if(this.minNewSize > this.cbl) {this.extendBuffer();}
+	        if (this.minNewSize > this.cbl) 
+			{
+				this.extendBuffer();
+			}
 
 	        this.out[this.op++] = this.buf[this.ip++];
-	        if(this.t > 1) {
+	        if (this.t > 1) 
+			{
 	            this.out[this.op++] = this.buf[this.ip++];
-	            if(this.t > 2) {
+	            if (this.t > 2) 
+				{
 	                this.out[this.op++] = this.buf[this.ip++];
 	            }
 	        }
@@ -86,17 +92,20 @@ package com.titan.utils
 	        this.t = this.buf[this.ip++];
 	    }
 
-		private function match_done():int
+		private function matchDone():int
 		{
 	        this.t = this.buf[this.ip - 2] & 3;
 	        return this.t;
 	    }
 
-	    private function copy_match():void
+	    private function copyMatch():void
 		{
 	        this.t += 2;
 	        this.minNewSize = this.op + this.t;
-	        if(this.minNewSize > this.cbl) {this.extendBuffer();}
+	        if (this.minNewSize > this.cbl) 
+			{
+				this.extendBuffer();
+			}
 
 	        do 
 			{
@@ -104,10 +113,13 @@ package com.titan.utils
 	        } while(--this.t > 0);
 	    };
 		
-		private function copy_from_buf():void
+		private function copyFromBuf():void
 		{
 	    	this.minNewSize = this.op + this.t;
-	        if(this.minNewSize > this.cbl) {this.extendBuffer();}
+	        if (this.minNewSize > this.cbl) 
+			{
+				this.extendBuffer();
+			}
 
 	        do 
 			{
@@ -124,7 +136,7 @@ package com.titan.utils
 	                this.pos = (this.op - 1) - ((this.t >> 2) & 7) - (this.buf[this.ip++] << 3);
 	                this.t = (this.t >> 5) - 1;
 
-	                this.copy_match();
+	                this.copyMatch();
 
 	            }
 				else if (this.t >= 32) 
@@ -143,7 +155,7 @@ package com.titan.utils
 	                this.pos = (this.op - 1) - (this.buf[this.ip] >> 2) - (this.buf[this.ip + 1] << 6);
 	                this.ip += 2;
 
-    	            this.copy_match();
+    	            this.copyMatch();
 
 	            } 
 				else if (this.t >= 16)
@@ -171,7 +183,7 @@ package com.titan.utils
 					else 
 					{
 	                	this.pos -= 0x4000;
-			            this.copy_match();
+			            this.copyMatch();
 	                }
 
 	            } 
@@ -180,25 +192,28 @@ package com.titan.utils
 	                this.pos = (this.op - 1) - (this.t >> 2) - (this.buf[this.ip++] << 2);
 					
 	                this.minNewSize = this.op + 2;
-	                if(this.minNewSize > this.cbl) {this.extendBuffer();}
+	                if (this.minNewSize > this.cbl) 
+					{
+						this.extendBuffer();
+					}
 
 	                this.out[this.op++] = this.out[this.pos++];
 	                this.out[this.op++] = this.out[this.pos];
 	            }
 
-	            if (this.match_done() == 0) 
+	            if (this.matchDone() == 0) 
 				{
 	                return OK;
 	            }
-	            this.match_next();
+	            this.matchNext();
 		    }
 			
 			return EOF_FOUND;
 	    };
 
-		public function decompress(state:LZOState):int
+		public function decompress(bytes:ByteArray):ByteArray
 		{
-	        this.state = state;
+	        this.state = new LZOState(bytes);
 
 	        this.buf = this.state.inputBuffer;
 	        this.cbl = this.out.length;
@@ -211,18 +226,21 @@ package com.titan.utils
 
 	        this.skipToFirstLiteralFun = false;
 			
-	        if (this.buf[this.ip] > 17) {
+	        if (this.buf[this.ip] > 17) 
+			{
 	            this.t = this.buf[this.ip++] - 17;
-	            if (this.t < 4) {
-	                this.match_next();
-	                this.ret = this.match();
-	                if(this.ret !== OK) {
-	                    return this.ret == EOF_FOUND ? OK : this.ret;
-	                }
-
-	            } else 
+	            if (this.t < 4) 
 				{
-	                this.copy_from_buf();
+	                this.matchNext();
+	                this.ret = this.match();
+	                if (this.ret != OK) 
+					{
+						return state.toOutputBytes();
+	                }
+	            } 
+				else 
+				{
+	                this.copyFromBuf();
 	                this.skipToFirstLiteralFun = true;
 	            }
 	        }
@@ -233,14 +251,14 @@ package com.titan.utils
 				{
 	                this.t = this.buf[this.ip++];
 
-	                if (this.t >= 16) {
+	                if (this.t >= 16) 
+					{
 	                    this.ret = this.match();
-	                    if (this.ret !== OK) 
+	                    if (this.ret != OK) 
 						{
-	                        return this.ret == EOF_FOUND ? OK : this.ret;
+	                        return state.toOutputBytes();
 	                    }
 	                    continue;
-
 	                } 
 					else if (this.t == 0) 
 					{
@@ -253,8 +271,10 @@ package com.titan.utils
 	                }
 					
 	                this.t += 3;
-	                this.copy_from_buf();
-	            } else {
+	                this.copyFromBuf();
+	            } 
+				else 
+				{
 	                this.skipToFirstLiteralFun = false;
 	            }
 
@@ -266,32 +286,34 @@ package com.titan.utils
 	                this.pos -= this.buf[this.ip++] << 2;
 					
 	                this.minNewSize = this.op + 3;
-	                if(this.minNewSize > this.cbl) {this.extendBuffer();}
+	                if (this.minNewSize > this.cbl) 
+					{
+						this.extendBuffer();
+					}
 	                this.out[this.op++] = this.out[this.pos++];
 	                this.out[this.op++] = this.out[this.pos++];
 	                this.out[this.op++] = this.out[this.pos];
 
-	                if (this.match_done() == 0) 
+	                if (this.matchDone() == 0) 
 					{
 	                    continue;
 	                } 
 					else 
 					{
-	                    this.match_next();
+	                    this.matchNext();
 	                }
 	            }
 
 	            this.ret = this.match();
 	            if (this.ret !== OK) 
 				{
-	                return this.ret == EOF_FOUND ? OK : this.ret;
+	                return state.toOutputBytes();
 	            }
 	        }
-
-	        return OK;
+	        return null;
 	    }
 
-		private function _compressCore():void
+		private function compressCore():void
 		{
 	        this.ipStart = this.ip;
 	        this.ipEnd = this.ip + this.ll - 20;
@@ -444,9 +466,9 @@ package com.titan.utils
 	        this.t = this.ll - ((this.jj - this.ipStart) - this.ti);
 	    };
 
-		public function compress(state:LZOState):int
+		public function compress(bytes:ByteArray):ByteArray
 		{
-	        this.state = state;
+	        this.state = new LZOState(bytes);
 	        this.ip = 0;
 	        this.buf = this.state.inputBuffer;
 	        this.maxSize = this.buf.length + Math.ceil(this.buf.length / 16) + 64 + 3;
@@ -459,46 +481,58 @@ package com.titan.utils
 	        this.l = this.buf.length;
 	        this.t = 0;
 
-	        while (this.l > 20) {
+	        while (this.l > 20) 
+			{
 	            this.ll = (this.l <= 49152) ? this.l : 49152;
-	            if ((this.t + this.ll) >> 5 <= 0) {
+	            if ((this.t + this.ll) >> 5 <= 0) 
+				{
 	                break;
 	            }
 
 	            this.dict = new Vector.<uint>(this.emptyDict.length);
 
 	            this.prevIp = this.ip;
-	            this._compressCore();
+	            this.compressCore();
 	            this.ip = this.prevIp + this.ll;
 	            this.l -= this.ll;
 	        }
 	        this.t += this.l;
 
-	        if (this.t > 0) {
+	        if (this.t > 0) 
+			{
 	            this.ii = this.buf.length - this.t;
 
-	            if (this.op == 0 && this.t <= 238) {
+	            if (this.op == 0 && this.t <= 238) 
+				{
 	                this.out[this.op++] = 17 + this.t;
 
-	            } else if (this.t <= 3) {
+	            } 
+				else if (this.t <= 3) 
+				{
 	                this.out[this.op-2] |= this.t;
 
-	            } else if (this.t <= 18) {
+	            } 
+				else if (this.t <= 18) 
+				{
 	                this.out[this.op++] = this.t - 3;
-
-	            } else {
+	            } 
+				else 
+				{
 	                this.tt = this.t - 18;
 	                this.out[this.op++] = 0;
-	                while (this.tt > 255) {
+	                while (this.tt > 255) 
+					{
 	                    this.tt -= 255;
 	                    this.out[this.op++] = 0;
 	                }
 	                this.out[this.op++] = this.tt;
 	            }
 
-	            do {
+	            do 
+				{
 	                this.out[this.op++] = this.buf[this.ii++];
-	            } while (--this.t > 0);
+	            } 
+				while (--this.t > 0);
 	        }
 
 	        this.out[this.op++] = 17;
@@ -506,7 +540,7 @@ package com.titan.utils
 	        this.out[this.op++] = 0;
 
 	        this.state.outputBuffer = out.slice(0, this.op);
-	        return OK;
+	        return state.toOutputBytes();
 	    }
 		
 		private function setArray(d:Vector.<uint>, s:Vector.<uint>):void
