@@ -1,5 +1,4 @@
-# LZO
-Pure as3 implementation of the LZO compression algorithm.
+# LZO-AS3
 
 ```Actionscript
 //for test
